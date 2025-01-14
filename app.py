@@ -223,35 +223,34 @@ def get_invalid_certs(query):
         page=query['page'],
         per_page=query['per_page']
     )
-    
-    # Create a StringIO object to write CSV data
-    csv_output = StringIO()
-    writer = csv.writer(csv_output)
-    
-    # Write headers
-    writer.writerow(["Name", "Certificate Type", "Certificate Description", "Certificate Link", "Expiration Date"])
-    
-    # Write certification data
-    for cert in pagination.items:
-        writer.writerow([
-            cert.employeename,
-            cert.certificatetype,
-            cert.certificatedescription,
-            cert.certificatelink,
-            str(cert.expirydate)
-        ])
-    
-    # Get the CSV data and close the StringIO object
-    csv_data = csv_output.getvalue()
-    csv_output.close()
-    
-    # Create response with CSV file
-    response = make_response(csv_data)
-    response.headers['Content-Type'] = 'text/csv'
-    response.headers['Content-Disposition'] = f'attachment; filename=certifications_invaliddate_{datetime.now().strftime("%Y%m%d")}.csv'
-    
-    return response
 
+# Start building the HTML table
+    table_html = "<table border='4'><tr><th>Name</th><th>Certificate Type</th><th>Certificate Description</th><th>Certificate Link</th><th>Expiration Date</th></tr>"
+
+    # Add each valid certification to the table
+    for cert in certs_data['certs']:
+         table_html += f"<tr><td>{html.escape(cert.employeename)}</td>" \
+              f"<td>{html.escape(cert.certificatetype)}</td>" \
+              f"<td>{html.escape(cert.certificatedescription)}</td>" \
+              f"<td><a href='{html.escape(cert.certificatelink)}'>Link</a></td>" \
+              f"<td>{html.escape(str(cert.expirydate))}</td></tr>"
+        
+    # Close the table
+    table_html += "</table>"
+
+    # Add a download button for the invalid certifications CSV
+    download_button_html = "<br><a href='/certifications/invalid' download='invalid_certifications.csv'><button>Download Expired Certifications</button></a>"
+
+    # Combine the table and the download button
+    response_html = table_html + download_button_html
+
+    # Return the table as part of a JSON response
+    return jsonify({
+        "html_content": response_html,
+        "pagination": certs_data['pagination'],
+        "message": "Certification data retrieved successfully"
+    })
+    
 
 #get records by validity date
 @app.get('/certifications/valid')
