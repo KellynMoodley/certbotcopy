@@ -379,6 +379,10 @@
                                           "type": "string",
                                           "description": "HTML table containing cert data"
                                       },
+                                      "download_url":{
+                                        "type":"string"
+                                        "description":"URL to download the table as a file"
+                                      },
                                       "pagination": {
                                           "$ref": "#/components/schemas/Pagination"
                                       },
