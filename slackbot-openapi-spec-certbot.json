@@ -418,61 +418,6 @@
               ]
           }
       },
-       "/certifications/download": {
-      "get": {
-        "summary": "Download certification data as CSV",
-        "description": "Download certification records as a CSV file",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "file",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Name of the CSV file to download"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "CSV file download",
-            "content": {
-              "text/csv": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid file parameter",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "File not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-              ]
-          }
-      },
       "/certifications/name/{employeename}": {
           "get": {
               "summary": "Get certs by name table",
