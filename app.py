@@ -207,7 +207,6 @@ def get_nodate_certs(query):
         "message": "Certification data retrieved successfully"
     })
 
-#get records by validity date (invalid)
 @app.get('/certifications/invalid')
 @app.output(CertOutSchema)
 @app.auth_required(auth)
@@ -233,34 +232,55 @@ def get_invalid_certs(query):
     # Start building the HTML table
     table_html = "<table border='4'><tr><th>Name</th><th>Certificate Type</th><th>Certificate Description</th><th>Certificate Link</th><th>Expiration Date</th></tr>"
 
-    # Add each valid certification to the table
+    # Prepare CSV data while building the table
+    csv_data = []
+    
+    # Add each invalid certification to the table and CSV data
     for cert in certs_data['certs']:
-         table_html += f"<tr><td>{html.escape(cert.employeename)}</td>" \
+        # Add to HTML table
+        table_html += f"<tr><td>{html.escape(cert.employeename)}</td>" \
               f"<td>{html.escape(cert.certificatetype)}</td>" \
               f"<td>{html.escape(cert.certificatedescription)}</td>" \
               f"<td><a href='{html.escape(cert.certificatelink)}'>Link</a></td>" \
               f"<td>{html.escape(str(cert.expirydate))}</td></tr>"
+              
+        # Add to CSV data
+        csv_data.append([
+            cert.employeename,
+            cert.certificatetype,
+            cert.certificatedescription,
+            cert.certificatelink,
+            str(cert.expirydate)
+        ])
 
     # Close the table
     table_html += "</table>"
 
-    # Store the table in a variable
-    #valid_certs_table = table_html
- 
-
     # Generate a CSV download link
     csv_filename = "certifications_invaliddate.csv"
     csv_path = os.path.join("/tmp", csv_filename)
-    with open(csv_path, 'w') as f:
+    with open(csv_path, 'w', newline='') as f:  # Added newline='' for proper CSV formatting
         writer = csv.writer(f)
         writer.writerow(["Name", "Certificate Type", "Certificate Description", "Certificate Link", "Expiration Date"])
         writer.writerows(csv_data)
 
-    # Add the download button link
-    download_link = f"<a href='/certifications/download?file={csv_filename}' target='_blank'><button>Download CSV</button></a>"
+    # Since you're using WatsonX Assistant, modify the download link to be more visible
+    download_link = f"""
+        <div style="margin-top: 20px; text-align: center;">
+            <a href='/certifications/download?file={csv_filename}' 
+               style="display: inline-block; 
+                      padding: 10px 20px; 
+                      background-color: #007bff; 
+                      color: white; 
+                      text-decoration: none; 
+                      border-radius: 5px;">
+                Download CSV
+            </a>
+        </div>
+    """
 
-    # Combine table and button
-    table_with_button = table_html + "<br>" + download_link
+    # Combine table and styled download link
+    table_with_button = table_html + download_link
 
     return jsonify({
         "table": table_with_button,
@@ -268,15 +288,31 @@ def get_invalid_certs(query):
         "message": "Certification data retrieved successfully"
     })
 
-
-# Serve the CSV file for download
 @app.get('/certifications/download')
 def download_csv():
     file = request.args.get('file')
+    if not file or '..' in file:  # Basic security check
+        abort(400, description="Invalid file parameter")
+        
     file_path = os.path.join("/tmp", file)
     if not os.path.exists(file_path):
         abort(404, description="File not found")
-    return send_file(file_path, as_attachment=True)
+        
+    response = send_file(
+        file_path,
+        as_attachment=True,
+        download_name=file  # Ensures proper filename in download
+    )
+    
+    # Clean up the temporary file after sending
+    @response.call_on_close
+    def cleanup():
+        try:
+            os.remove(file_path)
+        except:
+            pass
+            
+    return response
 
 
 #get records by validity date
