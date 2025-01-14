@@ -8,6 +8,8 @@
 
 import os
 import ast
+import csv
+import io
 from dotenv import load_dotenv
 from apiflask import APIFlask, Schema, HTTPTokenAuth, PaginationSchema, pagination_builder, abort
 from apiflask.fields import Integer, String, Boolean, Date, List, Nested
@@ -20,6 +22,7 @@ from datetime import datetime
 from sqlalchemy import text, func
 from sqlalchemy.sql import union_all
 from sqlalchemy import or_
+from flask import send_file
 
 # Set how this API should be titled and the current version
 API_TITLE='Events API for Watson Assistant'
