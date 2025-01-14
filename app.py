@@ -207,20 +207,16 @@ def get_nodate_certs(query):
         "message": "Certification data retrieved successfully"
     })   
 
-
-#get records by validity date (invalid)
-@app.get('/certifications/invalid')
+@app.get('/certifications/nodate')
 @app.output(CertOutSchema)
 @app.auth_required(auth)
 @app.input(CertQuerySchema, 'query')
-def get_invalid_certs(query):
-    """Get invalid certifications
-    Retrieve all certification records that have expired (expiry date is before or the current date)
+def get_nodate_certs(query):
+    """Get certifications
+    Retrieve all certification records that do not expire
     """
-    current_date = datetime.now().date()
-    
     pagination = CertModel.query.filter(
-        CertModel.expirydate < current_date
+        CertModel.expirydate.is_(None)
     ).paginate(
         page=query['page'],
         per_page=query['per_page']
@@ -233,28 +229,52 @@ def get_invalid_certs(query):
 
     # Start building the HTML table
     table_html = "<table border='4'><tr><th>Name</th><th>Certificate Type</th><th>Certificate Description</th><th>Certificate Link</th><th>Expiration Date</th></tr>"
+    csv_data = []
 
-    # Add each valid certification to the table
+    # Add each valid certification to the table and prepare CSV data
     for cert in certs_data['certs']:
-         table_html += f"<tr><td>{html.escape(cert.employeename)}</td>" \
-              f"<td>{html.escape(cert.certificatetype)}</td>" \
-              f"<td>{html.escape(cert.certificatedescription)}</td>" \
-              f"<td><a href='{html.escape(cert.certificatelink)}'>Link</a></td>" \
-              f"<td>{html.escape(str(cert.expirydate))}</td></tr>"
+        table_html += f"<tr><td>{html.escape(cert.employeename)}</td>" \
+                      f"<td>{html.escape(cert.certificatetype)}</td>" \
+                      f"<td>{html.escape(cert.certificatedescription)}</td>" \
+                      f"<td><a href='{html.escape(cert.certificatelink)}'>Link</a></td>" \
+                      f"<td>{html.escape(str(cert.expirydate))}</td></tr>"
+        csv_data.append([
+            cert.employeename, cert.certificatetype, cert.certificatedescription,
+            cert.certificatelink, str(cert.expirydate)
+        ])
 
     # Close the table
     table_html += "</table>"
 
-    # Store the table in a variable
-    valid_certs_table = table_html
+    # Generate a CSV download link
+    csv_filename = "certifications_nodate.csv"
+    csv_path = os.path.join("/tmp", csv_filename)
+    with open(csv_path, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Name", "Certificate Type", "Certificate Description", "Certificate Link", "Expiration Date"])
+        writer.writerows(csv_data)
 
-    # Return the table as part of a JSON response
+    # Add the download button link
+    download_link = f"<a href='/certifications/download?file={csv_filename}' target='_blank'><button>Download CSV</button></a>"
+
+    # Combine table and button
+    table_with_button = table_html + "<br>" + download_link
+
     return jsonify({
-        "table": valid_certs_table,
+        "table": table_with_button,
         "pagination": certs_data['pagination'],
-        "message": "inValid certification data retrieved successfully"
+        "message": "Certification data retrieved successfully"
     })
 
+
+# Serve the CSV file for download
+@app.get('/certifications/download')
+def download_csv():
+    file = request.args.get('file')
+    file_path = os.path.join("/tmp", file)
+    if not os.path.exists(file_path):
+        abort(404, description="File not found")
+    return send_file(file_path, as_attachment=True)
 
 
 #get records by validity date
