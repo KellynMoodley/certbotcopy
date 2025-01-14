@@ -344,8 +344,8 @@
       },
       "/certifications/invalid": {
           "get": {
-              "summary": "Get INvalid certs table",
-              "description": "Retrieve all INvalid cert records in an HTML table format",
+              "summary": "Get INvalid certs table as CSV",
+              "description": "Retrieve all INvalid cert records in an HTML table format as a CSV",
               "parameters": [
                   {
                       "in": "query",
@@ -369,23 +369,12 @@
               ],
               "responses": {
                   "200": {
-                      "description": "Successful response",
+                      "description": "CSV file containing invalid certification records. Successful response",
                       "content": {
-                          "application/json": {
+                          "text/csv": {
                               "schema": {
-                                  "type": "object",
-                                  "properties": {
-                                      "table": {
-                                          "type": "string",
-                                          "description": "HTML table containing cert data"
-                                      },
-                                      "pagination": {
-                                          "$ref": "#/components/schemas/Pagination"
-                                      },
-                                      "message": {
-                                          "type": "string"
-                                      }
-                                  }
+                                  "type": "string",
+                                  "format":"binary"
                               }
                           }
                       }
