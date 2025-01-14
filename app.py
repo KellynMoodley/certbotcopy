@@ -213,7 +213,7 @@ def get_nodate_certs(query):
 @app.input(CertQuerySchema, 'query')
 def get_invalid_certs(query):
     """Get invalid certifications
-    Retrieve all certification records that have expired (expiry date is before or the current date)
+    Retrieve all certification records that have expired and return as CSV download
     """
     current_date = datetime.now().date()
     
@@ -224,94 +224,32 @@ def get_invalid_certs(query):
         per_page=query['per_page']
     )
     
-    certs_data = {
-        'certs': pagination.items,
-        'pagination': pagination_builder(pagination)
-    }
-
-    # Start building the HTML table
-    table_html = "<table border='4'><tr><th>Name</th><th>Certificate Type</th><th>Certificate Description</th><th>Certificate Link</th><th>Expiration Date</th></tr>"
-
-    # Prepare CSV data while building the table
-    csv_data = []
+    # Create a StringIO object to write CSV data
+    csv_output = StringIO()
+    writer = csv.writer(csv_output)
     
-    # Add each invalid certification to the table and CSV data
-    for cert in certs_data['certs']:
-        # Add to HTML table
-        table_html += f"<tr><td>{html.escape(cert.employeename)}</td>" \
-              f"<td>{html.escape(cert.certificatetype)}</td>" \
-              f"<td>{html.escape(cert.certificatedescription)}</td>" \
-              f"<td><a href='{html.escape(cert.certificatelink)}'>Link</a></td>" \
-              f"<td>{html.escape(str(cert.expirydate))}</td></tr>"
-              
-        # Add to CSV data
-        csv_data.append([
+    # Write headers
+    writer.writerow(["Name", "Certificate Type", "Certificate Description", "Certificate Link", "Expiration Date"])
+    
+    # Write certification data
+    for cert in pagination.items:
+        writer.writerow([
             cert.employeename,
             cert.certificatetype,
             cert.certificatedescription,
             cert.certificatelink,
             str(cert.expirydate)
         ])
-
-    # Close the table
-    table_html += "</table>"
-
-    # Generate a CSV download link
-    csv_filename = "certifications_invaliddate.csv"
-    csv_path = os.path.join("/tmp", csv_filename)
-    with open(csv_path, 'w', newline='') as f:  # Added newline='' for proper CSV formatting
-        writer = csv.writer(f)
-        writer.writerow(["Name", "Certificate Type", "Certificate Description", "Certificate Link", "Expiration Date"])
-        writer.writerows(csv_data)
-
-    # Since you're using WatsonX Assistant, modify the download link to be more visible
-    download_link = f"""
-        <div style="margin-top: 20px; text-align: center;">
-            <a href='/certifications/download?file={csv_filename}' 
-               style="display: inline-block; 
-                      padding: 10px 20px; 
-                      background-color: #007bff; 
-                      color: white; 
-                      text-decoration: none; 
-                      border-radius: 5px;">
-                Download CSV
-            </a>
-        </div>
-    """
-
-    # Combine table and styled download link
-    table_with_button = table_html + download_link
-
-    return jsonify({
-        "table": table_with_button,
-        "pagination": certs_data['pagination'],
-        "message": "Certification data retrieved successfully"
-    })
-
-@app.get('/certifications/download')
-def download_csv():
-    file = request.args.get('file')
-    if not file or '..' in file:  # Basic security check
-        abort(400, description="Invalid file parameter")
-        
-    file_path = os.path.join("/tmp", file)
-    if not os.path.exists(file_path):
-        abort(404, description="File not found")
-        
-    response = send_file(
-        file_path,
-        as_attachment=True,
-        download_name=file  # Ensures proper filename in download
-    )
     
-    # Clean up the temporary file after sending
-    @response.call_on_close
-    def cleanup():
-        try:
-            os.remove(file_path)
-        except:
-            pass
-            
+    # Get the CSV data and close the StringIO object
+    csv_data = csv_output.getvalue()
+    csv_output.close()
+    
+    # Create response with CSV file
+    response = make_response(csv_data)
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename=certifications_invaliddate_{datetime.now().strftime("%Y%m%d")}.csv'
+    
     return response
 
 
