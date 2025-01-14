@@ -380,7 +380,7 @@
                                           "description": "HTML table containing cert data"
                                       },
                                       "download_url":{
-                                        "type":"string"
+                                        "type":"string",
                                         "description":"URL to download the table as a file"
                                       },
                                       "pagination": {
@@ -460,7 +460,7 @@
                                           "description": "HTML table containing cert data"
                                       },
                                       "download_url":{
-                                         "type":"string"
+                                         "type":"string",
                                          "description":"URL to download the table as a file"
                                       },
                                       "pagination": {
