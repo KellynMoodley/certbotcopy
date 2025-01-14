@@ -418,6 +418,26 @@
               ]
           }
       },
+      "/certifications/invalid/download": {
+      "get": {
+        "summary": "Download expired certifications as CSV",
+        "operationId": "downloadInvalidCerts",
+        "responses": {
+          "200": {
+            "description": "A CSV file containing expired certifications",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
       "/certifications/name/{employeename}": {
           "get": {
               "summary": "Get certs by name table",
